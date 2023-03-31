@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Word Search</title>
+  <style>
+    /* Flexbox styles */
+    body {
+      display: flex;
+      flex-direction: row;
+      align-items: flex-start;
+      justify-content: center;
+    }
+
+    ul {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      margin-right: 20px;
+    }
+
+    li {
+      margin-bottom: 10px;
+    }
+
+    .word-link {
+      color: blue;
+      text-decoration: underline;
+      cursor: pointer;
+    }
+
+    #search-result {
+      width: 100%;
+      height: 100vh;
+      border: solid;
+      border-width: 0 0 0 1px;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <input id="word" />
+    <button id="addWord">Add</button>
+    <ul id="word-list">
+      <li><a href="#" class="word-link" data-word="apple">Apple</a></li>
+      <li><a href="#" class="word-link" data-word="banana">Banana</a></li>
+      <li><a href="#" class="word-link" data-word="orange">Orange</a></li>
+      <li><a href="#" class="word-link" data-word="grape">Grape</a></li>
+    </ul>
+  </div>
+  <iframe id="search-result" src="https://www.google.com/search?igu=1&q=hello"></iframe>
+  <script>
+    const searchResult = document.getElementById('search-result');
+    const wordEle = document.getElementById('word');
+    const addEle = document.getElementById('addWord')
+
+    function getSearchLink(word) {
+      return `https://www.google.com/search?igu=1&q=define ${word}`
+    }
+
+    function renderWords(words) {
+      const wordListEle = document.getElementById('word-list');
+      wordListEle.innerHTML = '';
+      words.words.forEach(word => {
+        const li = document.createElement('li');
+        const text = document.createTextNode(word.name);
+        li.appendChild(text);
+        li.addEventListener('click', (event) => {
+          event.preventDefault();
+          searchResult.src = getSearchLink(word.name);
+        });
+        const button = document.createElement('button');
+        button.textContent = 'X';
+        button.addEventListener('click', (event) => {
+          event.preventDefault();
+          event.stopPropagation();
+          deleteWord(word.name);
+        });
+        li.appendChild(button);
+        li.classList.add("word-link");
+        wordListEle.appendChild(li);
+      });
+    }
+
+    async function postWord(word) {
+      try {
+        const response = await fetch('http://km_home:9998/api/word', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name: word })
+        });
+        const data = await response.json();
+        renderWords(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+    async function deleteWord(word) {
+      try {
+        const response = await fetch('http://km_home:9998/api/word', {
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({ name: word })
+        });
+        const data = await response.json();
+        renderWords(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    async function fetchWords() {
+      try {
+        const response = await fetch('http://km_home:9998/api/word');
+        const words = await response.json();
+        renderWords(words);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    function setWord(word) {
+      if (word) {
+        postWord(word);
+      }
+      wordEle.value = word;
+      searchResult.src = getSearchLink(word);
+    }
+
+    function setUpEvents() {
+      wordEle.addEventListener('change', (event) => {
+        event.preventDefault();
+        const word = wordEle.value;
+        searchResult.src = getSearchLink(word);
+      });
+
+      addEle.addEventListener('click', (event) => {
+        event.preventDefault();
+        if (wordEle.value) {
+          postWord(wordEle.value);
+        }
+      });
+
+      window.addEventListener("paste", function (event) {
+        event.preventDefault();
+        const pastedText = event.clipboardData.getData("text");
+        setWord(pastedText);
+      });
+    }
+
+    setUpEvents();
+
+    // Create a new URLSearchParams object from the URL
+    const params = new URLSearchParams(document.location.search);
+
+    // Get the value of the 'q' parameter
+    const query = params.get('q') || '';
+    setWord(query);
+    if (!query) {
+      fetchWords();
+    }
+  </script>
+</body>
+
+</html>
