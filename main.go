@@ -5,8 +5,10 @@ import (
 	"errors"
 	"flag"
 	"fmt"
+	"io/ioutil"
 	"log"
 	"net/http"
+	"strings"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
@@ -18,6 +20,17 @@ var port = flag.Int("port", 8080, "the port")
 var dbPath = flag.String("db_path", "memo_testdata/db", "the path to the db")
 
 var wordKey = []byte("word.word")
+var noteKey = []byte("note.note")
+
+type Note struct {
+	ID       string `json:"id" xml:"id" form:"id" query:"id"`
+	Content  string `json:"content" xml:"content" form:"content" query:"content"`
+	Modified int64  `json:"modified" xml:"modified" form:"modified" query:"modified"`
+}
+
+type NoteList struct {
+	Notes []Note `json:"notes" xml:"notes" form:"notes" query:"notes"`
+}
 
 type Word struct {
 	Name string `json:"name" xml:"name" form:"name" query:"name"`
@@ -127,6 +140,46 @@ func main() {
 			return fmt.Errorf("write wordList to db failed %v", err)
 		}
 		return c.JSON(http.StatusCreated, wordList)
+	})
+
+	e.GET("/api/note", func(c echo.Context) error {
+		rawList, err := db.Get(noteKey, nil)
+		if err != nil && !errors.Is(err, leveldb.ErrNotFound) {
+			return fmt.Errorf("read NoteList from db failed %v", err)
+		}
+		noteList := new(NoteList)
+		if err == nil {
+			if err := json.Unmarshal(rawList, noteList); err != nil {
+				return fmt.Errorf("unmarshal noteList (%s) failed %v", rawList, err)
+			}
+		}
+		return c.JSON(http.StatusCreated, noteList)
+	})
+	e.PUT("/api/note", func(c echo.Context) error {
+		bodyBytes, err := ioutil.ReadAll(c.Request().Body)
+		if err != nil {
+			return fmt.Errorf("read body error %v", err)
+		}
+		bodyString := string(bodyBytes)
+		notes := strings.Split(bodyString, "\n\n")
+		noteList := new(NoteList)
+		for _, note := range notes {
+			note = strings.Trim(note, " \n\t")
+			if len(note) == 0 {
+				continue
+			}
+			n := new(Note)
+			n.Content = note
+			noteList.Notes = append(noteList.Notes, *n)
+		}
+		updateRawNote, err := json.Marshal(noteList)
+		if err != nil {
+			return fmt.Errorf("marshal noteList (%v) failed %v", noteList, err)
+		}
+		if err := db.Put(noteKey, updateRawNote, nil); err != nil {
+			return fmt.Errorf("write wordList to db failed %v", err)
+		}
+		return c.JSON(http.StatusCreated, noteList)
 	})
 	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
 }

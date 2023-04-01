@@ -53,7 +53,10 @@
   <script>
     const searchResult = document.getElementById('search-result');
     const wordEle = document.getElementById('word');
-    const addEle = document.getElementById('addWord')
+    const addEle = document.getElementById('addWord');
+    const apiHost = document.location.host;
+    const wordApi = 'http://' + apiHost + '/api/word';
+    console.log(wordApi);
 
     function getSearchLink(word) {
       return `https://www.google.com/search?igu=1&q=define ${word}`
@@ -85,7 +88,7 @@
 
     async function postWord(word) {
       try {
-        const response = await fetch('http://km_home:9998/api/word', {
+        const response = await fetch(wordApi, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json'
@@ -100,7 +103,7 @@
     }
     async function deleteWord(word) {
       try {
-        const response = await fetch('http://km_home:9998/api/word', {
+        const response = await fetch(wordApi, {
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
@@ -116,7 +119,7 @@
 
     async function fetchWords() {
       try {
-        const response = await fetch('http://km_home:9998/api/word');
+        const response = await fetch(wordApi);
         const words = await response.json();
         renderWords(words);
       } catch (error) {

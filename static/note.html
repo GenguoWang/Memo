@@ -1,0 +1,54 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Note</title>
+  <style>
+    #note {
+      width: 100%;
+      height: 600px;
+    }
+  </style>
+</head>
+
+<body>
+  <div>
+    <button id="setWord">Set</button>
+    <textarea id="note"></textarea>
+    <div id="result">
+
+    </div>
+  </div>
+  <script>
+    const resultEle = document.getElementById('result');
+    const noteEle = document.getElementById('note');
+    const setWordEle = document.getElementById('setWord')
+
+    async function putNote(note) {
+      try {
+        const response = await fetch('http://km_home:9998/api/note', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'plain/text'
+          },
+          body: note
+        });
+        const data = await response.json();
+        resultEle.textContent = JSON.stringify(data);
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
+    function setUpEvents() {
+      setWordEle.addEventListener('click', (event) => {
+        event.preventDefault();
+        putNote(noteEle.value);
+      });
+    }
+
+    setUpEvents();
+  </script>
+</body>
+
+</html>
