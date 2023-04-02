@@ -55,7 +55,7 @@
     const wordEle = document.getElementById('word');
     const addEle = document.getElementById('addWord');
     const apiHost = document.location.host;
-    const wordApi = 'http://' + apiHost + '/api/word';
+    const wordApi = document.location.protocol + '//' + apiHost + '/api/word';
     console.log(wordApi);
 
     function getSearchLink(word) {
@@ -127,6 +127,25 @@
       }
     }
 
+    async function showWordFromClipBoard(shouldLoad) {
+      try {
+        const permission = await navigator.permissions.query({ name: "clipboard-read" });
+        if (permission.state === "granted") {
+          const text = await navigator.clipboard.readText();
+          if (text && text.length < 20) {
+            setWord(text);
+            navigator.clipboard.writeText("");
+          } else if(shouldLoad) {
+            fetchWords();
+          }
+        } else {
+          console.log("No permission to read clipboard");
+        }
+      } catch (error) {
+        console.error(error);
+      }
+    }
+
     function setWord(word) {
       if (word) {
         postWord(word);
@@ -154,6 +173,14 @@
         const pastedText = event.clipboardData.getData("text");
         setWord(pastedText);
       });
+
+      document.addEventListener("visibilitychange", function () {
+        console.log("The tab has been focused or blurred.");
+        console.log(document.visibilityState);
+        if (document.visibilityState == "visible") {
+          showWordFromClipBoard();
+        }
+      });
     }
 
     setUpEvents();
@@ -165,7 +192,7 @@
     const query = params.get('q') || '';
     setWord(query);
     if (!query) {
-      fetchWords();
+      showWordFromClipBoard(true);
     }
   </script>
 </body>

@@ -181,5 +181,6 @@ func main() {
 		}
 		return c.JSON(http.StatusCreated, noteList)
 	})
-	e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
+	// e.Logger.Fatal(e.Start(fmt.Sprintf(":%d", *port)))
+	e.Logger.Fatal(e.StartTLS(fmt.Sprintf(":%d", *port), "certs/RSA-cert.pem", "certs/RSA-privkey.pem"))
 }
