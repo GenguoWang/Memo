@@ -139,6 +139,7 @@
             fetchWords();
           }
         } else {
+          fetchWords();
           console.log("No permission to read clipboard");
         }
       } catch (error) {
@@ -174,12 +175,18 @@
         setWord(pastedText);
       });
 
+      /*
       document.addEventListener("visibilitychange", function () {
         console.log("The tab has been focused or blurred.");
         console.log(document.visibilityState);
         if (document.visibilityState == "visible") {
           showWordFromClipBoard();
         }
+      });
+      */
+      window.addEventListener("focus", (event) => {
+        console.log("window focus");
+        showWordFromClipBoard();
       });
     }
 
